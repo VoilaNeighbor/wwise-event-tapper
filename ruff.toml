@@ -1,0 +1,6 @@
+[lint]
+select = ["ALL"]
+ignore = [
+    "D", # Ignore doc coverage issues.
+    "INP001", # Allow namespace packages.
+]
