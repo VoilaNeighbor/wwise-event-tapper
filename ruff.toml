@@ -1,6 +1,12 @@
 [lint]
 select = ["ALL"]
 ignore = [
-    "D", # Ignore doc coverage issues.
+    "ANN401", # Allow `Any` in type hints.
+    "COM812", # Allow omitting trailing commas.
+    "D",      # Ignore doc coverage issues.
+    "FBT002", # Allow boolean arguments.
+    "PGH003", # Allow type ignore.
     "INP001", # Allow namespace packages.
+    "S603",   # Allow input args with subprocess.
+    "S607",   # Allow partial exe path for subprocess.
 ]

@@ -11,3 +11,6 @@ wheels/
 
 # This is platform-dependent.
 uv.lock
+
+# Generated event files
+export/
