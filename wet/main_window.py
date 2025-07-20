@@ -49,6 +49,7 @@ class MainWindow(QMainWindow):
         # File selection section
         file_section = QHBoxLayout()
         self.select_file_btn = QPushButton("Select Music File")
+        self.select_file_btn.setAutoDefault(False)  # Prevent space key activation
         self.file_label = QLabel("No file selected")
         self.file_label.setStyleSheet("font-style: italic; color: gray;")
 
@@ -61,6 +62,11 @@ class MainWindow(QMainWindow):
         self.play_btn = QPushButton("▶ Play")
         self.pause_btn = QPushButton("⏸ Pause")
         self.stop_btn = QPushButton("⏹ Stop")
+
+        # Prevent buttons from being activated by space key
+        self.play_btn.setAutoDefault(False)
+        self.pause_btn.setAutoDefault(False)
+        self.stop_btn.setAutoDefault(False)
 
         # Initially disable controls until file is loaded
         self.play_btn.setEnabled(False)
@@ -176,6 +182,7 @@ class MainWindow(QMainWindow):
                 # Auto-save after each event
                 if self.auto_save_path:
                     self.auto_save_events()
+            # Always accept space key events to prevent button activation
             event.accept()
         else:
             super().keyPressEvent(event)
