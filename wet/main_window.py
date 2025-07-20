@@ -21,6 +21,13 @@ from wet.audio_player import AudioPlayer
 from wet.event_recorder import EventRecorder
 
 
+def format_time(seconds: float) -> str:
+    """Format time in seconds to MM:SS format."""
+    minutes = int(seconds // 60)
+    secs = int(seconds % 60)
+    return f"{minutes:02d}:{secs:02d}"
+
+
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
@@ -31,10 +38,10 @@ class MainWindow(QMainWindow):
         self.total_duration: float = 0.0
 
         # Initialize UI and connect signals
-        self.init_ui()
-        self.connect_signals()
+        self._init_ui()
+        self._connect_signals()
 
-    def init_ui(self) -> None:  # noqa: PLR0915
+    def _init_ui(self) -> None:  # noqa: PLR0915
         self.setWindowTitle("Wwise Event Tapper")
         self.setMinimumSize(500, 300)
 
@@ -44,7 +51,7 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(central_widget)
 
         # Create menu bar
-        self.create_menu_bar()
+        self._create_menu_bar()
 
         # File selection section
         file_section = QHBoxLayout()
@@ -122,10 +129,10 @@ class MainWindow(QMainWindow):
 
         # Timer for updating UI
         self.ui_timer = QTimer()
-        self.ui_timer.timeout.connect(self.update_ui)
+        self.ui_timer.timeout.connect(self._update_ui)
         self.ui_timer.start(100)  # Update every 100ms
 
-    def create_menu_bar(self) -> None:
+    def _create_menu_bar(self) -> None:
         """Create the menu bar."""
         menubar = self.menuBar()
 
@@ -154,10 +161,10 @@ class MainWindow(QMainWindow):
         # Help menu
         help_menu = menubar.addMenu("Help")
         about_action = QAction("About", self)
-        about_action.triggered.connect(self.show_about)
+        about_action.triggered.connect(self._show_about)
         help_menu.addAction(about_action)
 
-    def connect_signals(self) -> None:
+    def _connect_signals(self) -> None:
         # Button connections
         self.select_file_btn.clicked.connect(self.select_file)
         self.play_btn.clicked.connect(self.play_audio)
@@ -165,23 +172,23 @@ class MainWindow(QMainWindow):
         self.stop_btn.clicked.connect(self.stop_audio)
 
         # Audio player signals
-        self.audio_player.playback_started.connect(self.on_playback_started)
-        self.audio_player.playback_stopped.connect(self.on_playback_stopped)
-        self.audio_player.playback_paused.connect(self.on_playback_paused)
-        self.audio_player.playback_resumed.connect(self.on_playback_resumed)
-        self.audio_player.duration_changed.connect(self.on_duration_changed)
+        self.audio_player.playback_started.connect(self._on_playback_started)
+        self.audio_player.playback_stopped.connect(self._on_playback_stopped)
+        self.audio_player.playback_paused.connect(self._on_playback_paused)
+        self.audio_player.playback_resumed.connect(self._on_playback_resumed)
+        self.audio_player.duration_changed.connect(self._on_duration_changed)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:  # noqa: N802
         if event.key() == Qt.Key.Key_Space:
             if self.audio_player.is_playing():
                 timestamp = self.audio_player.get_position()
                 self.event_recorder.record_event(timestamp)
-                self.update_events_count()
+                self._update_events_count()
                 self.status_bar.showMessage(f"Event recorded at {timestamp:.2f}s", 1000)
 
                 # Auto-save after each event
                 if self.auto_save_path:
-                    self.auto_save_events()
+                    self._auto_save_events()
             # Always accept space key events to prevent button activation
             event.accept()
         else:
@@ -230,107 +237,6 @@ class MainWindow(QMainWindow):
         self.audio_player.stop()
         self.status_bar.showMessage("Stopped")
 
-    def on_playback_started(self) -> None:
-        self.event_recorder.start_recording()
-        self.recording_status.setText("Recording: ● ON")
-        self.recording_status.setStyleSheet("color: red; font-weight: bold;")
-
-        # Set up auto-save on first recording
-        if not self.auto_save_path and self.current_file:
-            self.setup_auto_save()
-
-    def on_playback_stopped(self) -> None:
-        self.event_recorder.stop_recording()
-        self.recording_status.setText("Recording: ○ OFF")
-        self.recording_status.setStyleSheet("color: black; font-weight: normal;")
-
-        # Auto-save on stop if we have events
-        if self.auto_save_path and self.event_recorder.get_events():
-            self.auto_save_events()
-
-    def on_playback_paused(self) -> None:
-        # Don't stop recording on pause, just update UI
-        self.recording_status.setText("Recording: ⏸ PAUSED")
-        self.recording_status.setStyleSheet("color: orange; font-weight: bold;")
-
-    def on_playback_resumed(self) -> None:
-        # Resume recording display
-        self.recording_status.setText("Recording: ● ON")
-        self.recording_status.setStyleSheet("color: red; font-weight: bold;")
-
-    def on_duration_changed(self, duration: float) -> None:
-        self.total_duration = duration
-        self.update_time_display()
-
-    def setup_auto_save(self) -> None:
-        """Set up auto-save file path based on current music file."""
-        if not self.current_file:
-            return
-
-        # Create auto-save in export directory
-        export_dir = Path("export")
-        export_dir.mkdir(exist_ok=True)
-
-        music_stem = self.current_file.stem
-        auto_save_name = f"{music_stem}_events.json"
-        self.auto_save_path = export_dir / auto_save_name
-
-        self.save_location.setText(f"Auto-save: {self.auto_save_path}")
-        self.save_location.setStyleSheet("font-size: 10px; color: blue;")
-
-    def auto_save_events(self) -> None:
-        """Auto-save events to the designated path."""
-        if not self.auto_save_path:
-            return
-
-        try:
-            self.event_recorder.export_events(self.auto_save_path)
-            self.status_bar.showMessage(
-                f"Auto-saved to {self.auto_save_path.name}", 2000
-            )
-        except Exception as e:  # noqa: BLE001
-            self.status_bar.showMessage(f"Auto-save failed: {e}", 3000)
-
-    def update_ui(self) -> None:
-        if self.audio_player.is_playing():
-            self.play_btn.setText("▶ Playing...")
-            self.pause_btn.setText("⏸ Pause")
-        elif self.audio_player.is_paused():
-            self.play_btn.setText("▶ Play")
-            self.pause_btn.setText("▶ Resume")
-        else:
-            self.play_btn.setText("▶ Play")
-            self.pause_btn.setText("⏸ Pause")
-
-        # Update progress bar and time display
-        if self.total_duration > 0:
-            current_pos = self.audio_player.get_position()
-            progress = min(int((current_pos / self.total_duration) * 1000), 1000)
-            self.progress_bar.setValue(progress)
-
-            # Update time display
-            current_time = self.format_time(current_pos)
-            total_time = self.format_time(self.total_duration)
-            self.time_label.setText(f"{current_time} / {total_time}")
-
-    def update_events_count(self) -> None:
-        count = len(self.event_recorder.get_events())
-        self.events_count.setText(f"Events Recorded: {count}")
-
-    def update_time_display(self) -> None:
-        """Update the time display labels."""
-        if self.total_duration > 0:
-            current_pos = self.audio_player.get_position()
-            current_time = self.format_time(current_pos)
-            total_time = self.format_time(self.total_duration)
-            self.time_label.setText(f"{current_time} / {total_time}")
-
-    def format_time(self, seconds: float) -> str:
-        """Format time in seconds to MM:SS format."""
-        minutes = int(seconds // 60)
-        secs = int(seconds % 60)
-        return f"{minutes:02d}:{secs:02d}"
-
     def export_events(self) -> None:
         if not self.event_recorder.get_events():
             QMessageBox.information(self, "No Events", "No events recorded to export.")
@@ -363,7 +269,100 @@ class MainWindow(QMainWindow):
                     self, "Export Error", f"Failed to export events: {e!s}"
                 )
 
-    def show_about(self) -> None:
+    def _on_playback_started(self) -> None:
+        self.event_recorder.start_recording()
+        self.recording_status.setText("Recording: ● ON")
+        self.recording_status.setStyleSheet("color: red; font-weight: bold;")
+
+        # Set up auto-save on first recording
+        if not self.auto_save_path and self.current_file:
+            self._setup_auto_save()
+
+    def _on_playback_stopped(self) -> None:
+        self.event_recorder.stop_recording()
+        self.recording_status.setText("Recording: ○ OFF")
+        self.recording_status.setStyleSheet("color: black; font-weight: normal;")
+
+        # Auto-save on stop if we have events
+        if self.auto_save_path and self.event_recorder.get_events():
+            self._auto_save_events()
+
+    def _on_playback_paused(self) -> None:
+        # Don't stop recording on pause, just update UI
+        self.recording_status.setText("Recording: ⏸ PAUSED")
+        self.recording_status.setStyleSheet("color: orange; font-weight: bold;")
+
+    def _on_playback_resumed(self) -> None:
+        # Resume recording display
+        self.recording_status.setText("Recording: ● ON")
+        self.recording_status.setStyleSheet("color: red; font-weight: bold;")
+
+    def _on_duration_changed(self, duration: float) -> None:
+        self.total_duration = duration
+        self._update_time_display()
+
+    def _setup_auto_save(self) -> None:
+        """Set up auto-save file path based on current music file."""
+        if not self.current_file:
+            return
+
+        # Create auto-save in export directory
+        export_dir = Path("export")
+        export_dir.mkdir(exist_ok=True)
+
+        music_stem = self.current_file.stem
+        auto_save_name = f"{music_stem}_events.json"
+        self.auto_save_path = export_dir / auto_save_name
+
+        self.save_location.setText(f"Auto-save: {self.auto_save_path}")
+        self.save_location.setStyleSheet("font-size: 10px; color: blue;")
+
+    def _auto_save_events(self) -> None:
+        """Auto-save events to the designated path."""
+        if not self.auto_save_path:
+            return
+
+        try:
+            self.event_recorder.export_events(self.auto_save_path)
+            self.status_bar.showMessage(
+                f"Auto-saved to {self.auto_save_path.name}", 2000
+            )
+        except Exception as e:  # noqa: BLE001
+            self.status_bar.showMessage(f"Auto-save failed: {e}", 3000)
+
+    def _update_ui(self) -> None:
+        if self.audio_player.is_playing():
+            self.play_btn.setText("▶ Playing...")
+            self.pause_btn.setText("⏸ Pause")
+        elif self.audio_player.is_paused():
+            self.play_btn.setText("▶ Play")
+            self.pause_btn.setText("▶ Resume")
+        else:
+            self.play_btn.setText("▶ Play")
+            self.pause_btn.setText("⏸ Pause")
+
+        # Update progress bar and time display
+        if self.total_duration > 0:
+            current_pos = self.audio_player.get_position()
+            progress = min(int((current_pos / self.total_duration) * 1000), 1000)
+            self.progress_bar.setValue(progress)
+
+            # Update time display
+            self._update_time_display()
+
+    def _update_events_count(self) -> None:
+        count = len(self.event_recorder.get_events())
+        self.events_count.setText(f"Events Recorded: {count}")
+
+    def _update_time_display(self) -> None:
+        """Update the time display labels."""
+        if self.total_duration > 0:
+            current_pos = self.audio_player.get_position()
+            current_time = format_time(current_pos)
+            total_time = format_time(self.total_duration)
+            self.time_label.setText(f"{current_time} / {total_time}")
+
+    def _show_about(self) -> None:
         QMessageBox.about(
             self,
             "About Wwise Event Tapper",
