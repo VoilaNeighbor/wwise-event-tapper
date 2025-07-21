@@ -1,12 +1,21 @@
 [lint]
 select = ["ALL"]
 ignore = [
-    "ANN401", # Allow `Any` in type hints.
-    "COM812", # Allow omitting trailing commas.
-    "D",      # Ignore doc coverage issues.
-    "FBT002", # Allow boolean arguments.
-    "PGH003", # Allow type ignore.
-    "INP001", # Allow namespace packages.
-    "S603",   # Allow input args with subprocess.
-    "S607",   # Allow partial exe path for subprocess.
+    "ANN401",  # Allow `Any` in type hints.
+    "COM812",  # Allow omitting trailing commas.
+    "CPY001",  # We don't need copyright frontmatter for now.
+    "D",       # Ignore doc coverage issues.
+    "DOC201",  # Allow missing return document.
+    "FBT",     # Allow boolean arguments.
+    "N802",    # Allow camelCase for Qt magic methods.
+    "PLC0415", # Allow local/dynamic imports.
+    "PGH003",  # Allow type ignore.
+    "PLR2004", # Allow magic numbers. I know what I'm doing for obvious cases.
+    "PTH",     # Allow using `os.path`; it's often simpler.
+    "RET504",  # Allow assigning to a variable before returning.
+    "INP001",  # Allow namespace packages.
+    "S101",    # Allow use of assert, in tests and for doc purposes.
+    "S404",    # Allow use of the subprocess module.
+    "S603",    # Allow input args with subprocess.
+    "S607",    # Allow partial exe path for subprocess.
 ]

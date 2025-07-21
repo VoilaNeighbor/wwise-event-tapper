@@ -7,14 +7,18 @@ requires-python = ">=3.13"
 dependencies = [
     "PySide6>=6.9.1",
     "attrs>=25.3.0",
-    "mutagen>=1.47.0",
+    "audioop-lts>=0.2.1",
     "orjson>=3.11.0",
+    "polars>=1.31.0",
+    "pydub>=0.25.1",
     "pygame>=2.6.1",
+    "qt-material>=2.17",
 ]
 
 [dependency-groups]
 dev = [
     "fire>=0.7.0",
+    "pydub-stubs>=0.25.1.6",
     "pyright>=1.1.403",
     "pytest>=8.4.1",
     "rich>=14.0.0",

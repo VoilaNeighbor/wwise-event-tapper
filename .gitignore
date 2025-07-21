@@ -5,9 +5,8 @@ build/
 dist/
 wheels/
 *.egg-info
-
-# Virtual environments
-.venv
+/.pytest_cache/
+/.venv/
 
 # This is platform-dependent.
 uv.lock
