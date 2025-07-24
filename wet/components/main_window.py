@@ -1,7 +1,7 @@
 from logging import getLogger
 
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QMouseEvent
+from PySide6.QtGui import QKeyEvent, QMouseEvent
 from PySide6.QtWidgets import (
     QFileDialog,
     QMainWindow,
@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 )
 
 from wet.components.music_player import MusicPlayer
+from wet.components.tap_trackers import TapTracksContainer
 from wet.components.title_bar import TitleBar
 
 _logger = getLogger("wwise-event-tapper")
@@ -25,18 +26,20 @@ class AppMainWindow(QMainWindow):
         self.setMinimumSize(600, 400)
 
         self._player = MusicPlayer()
+        self._tap_tracks = TapTracksContainer()
 
         title_bar = TitleBar()
         title_bar.exit_button.clicked.connect(self.close)
         title_bar.select_file_button.clicked.connect(self._on_select_file)
 
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QVBoxLayout(central_widget)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(title_bar)
         layout.addWidget(self._player)
+        layout.addWidget(self._tap_tracks)
         layout.addStretch()
-        self.setCentralWidget(widget)
 
         self._drag_start = QPoint()
 
@@ -55,6 +58,12 @@ class AppMainWindow(QMainWindow):
             event.accept()
         else:
             super().mouseMoveEvent(event)
+
+    def keyPressEvent(self, event: QKeyEvent, /) -> None:
+        if event.key() == Qt.Key.Key_J:
+            ...
+        else:
+            super().keyPressEvent(event)
 
     def _on_select_file(self) -> None:
         file_path, _ = QFileDialog.getOpenFileName(
