@@ -11,18 +11,6 @@ _title_bar_style = """
     }
 """
 
-_menu_button_style = """
-    QPushButton {
-        background: transparent;
-        color: white;
-        border: none;
-        margin: 5px;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-"""
-
 _exit_button_style = """
     QPushButton {
         background: transparent;
@@ -49,18 +37,11 @@ class TitleBar(QFrame):
         self.setFixedHeight(30)
         self.setStyleSheet(_title_bar_style)
 
-        self.select_file_button = QPushButton("Select File")
-        self.export_button = QPushButton("Export")
-        self.exit_button = QPushButton("×")  # noqa: RUF001
-
-        self.select_file_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.export_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.exit_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-
-        self.select_file_button.setStyleSheet(_menu_button_style)
-        self.export_button.setStyleSheet(_menu_button_style)
-        self.exit_button.setFixedSize(24, 24)
-        self.exit_button.setStyleSheet(_exit_button_style)
+        self._exit_button = QPushButton("×")  # noqa: RUF001
+        self._exit_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._exit_button.setFixedSize(24, 24)
+        self._exit_button.setStyleSheet(_exit_button_style)
+        self._exit_button.clicked.connect(self._window.close)
 
         title_label = QLabel("Wwise Event Tapper")
         title_label.setStyleSheet("color: white; font-weight: bold")
@@ -68,10 +49,8 @@ class TitleBar(QFrame):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(5, 0, 5, 0)
         layout.addWidget(title_label)
-        layout.addWidget(self.select_file_button)
-        layout.addWidget(self.export_button)
         layout.addStretch()
-        layout.addWidget(self.exit_button)
+        layout.addWidget(self._exit_button)
 
     @override
     def mousePressEvent(self, event: QMouseEvent, /) -> None:

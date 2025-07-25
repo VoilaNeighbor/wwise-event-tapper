@@ -29,20 +29,24 @@ class MusicPlayer(QGroupBox):
 
         self._player = QMediaPlayer()
         self._label = QLabel("No music loaded.")
+        self._load_button = QPushButton("Select")
         self._play_button = QPushButton("Play")
         self._progress_slider = QSlider(Qt.Orientation.Horizontal)
         self._progress_label = QLabel("00:00 / 00:00")
 
         self._audio = QAudioOutput()
         self._player.setAudioOutput(self._audio)
+        self._load_button.setFixedSize(70, 27)
+        self._load_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._play_button.setEnabled(False)
-        self._play_button.setFixedSize(70, 30)
+        self._play_button.setFixedSize(70, 27)
         self._play_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._progress_slider.setEnabled(False)
         self._progress_label.setStyleSheet("color: gray;")
 
         self._player.positionChanged.connect(self._on_music_position_change)
         self._player.mediaStatusChanged.connect(self._on_media_status_changed)
+        self._load_button.clicked.connect(self.load_music_file)
         self._play_button.clicked.connect(self.toggle_play)
         self._progress_slider.sliderMoved.connect(self._player.setPosition)
 
@@ -54,7 +58,11 @@ class MusicPlayer(QGroupBox):
         layout = QVBoxLayout(self)
         layout.setSpacing(10)
         layout.setContentsMargins(10, 10, 10, 10)
-        layout.addWidget(self._label)
+        layout1 = QHBoxLayout()
+        layout1.addWidget(self._label)
+        layout1.addStretch()
+        layout1.addWidget(self._load_button)
+        layout.addLayout(layout1)
         layout.addLayout(progress_layout)
 
         if __debug__:

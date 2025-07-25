@@ -18,19 +18,16 @@ class AppMainWindow(QMainWindow):
 
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
         self.setWindowTitle("Wwise Event Tapper")
-        self.setMinimumSize(600, 400)
+        self.setMinimumSize(500, 809)
 
         self._player = MusicPlayer()
         self._tap_tracks = TapTracksContainer()
-
-        title_bar = TitleBar(self)
-        title_bar.exit_button.clicked.connect(self.close)
-        title_bar.select_file_button.clicked.connect(self._player.load_music_file)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
         layout.setContentsMargins(0, 0, 0, 0)
+        title_bar = TitleBar(self)
         layout.addWidget(title_bar)
 
         layout1 = QVBoxLayout()
@@ -45,11 +42,21 @@ class AppMainWindow(QMainWindow):
 
     @override
     def keyPressEvent(self, event: QKeyEvent, /) -> None:
-        if event.key() == Qt.Key.Key_Space:
+        key = Qt.Key(event.key())
+        if key == Qt.Key.Key_Space:
             self._player.toggle_play()
             event.accept()
         elif self._player.playing:
-            self._tap_tracks.tap(Qt.Key(event.key()), self._player.position)
+            self._tap_tracks.tap(key, self._player.position, is_lift=False)
             event.accept()
         else:
             super().keyPressEvent(event)
+
+    @override
+    def keyReleaseEvent(self, event: QKeyEvent, /) -> None:
+        if self._player.playing:
+            key = Qt.Key(event.key())
+            self._tap_tracks.tap(key, self._player.position, is_lift=True)
+            event.accept()
+        else:
+            super().keyReleaseEvent(event)
