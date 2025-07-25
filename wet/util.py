@@ -1,3 +1,4 @@
+import datetime as dt
 from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
@@ -21,3 +22,7 @@ def once[**P, R](fn: Callable[P, R]) -> Callable[P, R | None]:
         return None
 
     return wrapper
+
+
+def now() -> dt.datetime:
+    return dt.datetime.now().astimezone()

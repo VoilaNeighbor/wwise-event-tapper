@@ -24,7 +24,7 @@ def main() -> None:
 
     apply_stylesheet(
         app,
-        theme="light_blue.xml",
+        theme="light_blue_500.xml",
         invert_secondary=True,
         extra={"density_scale": "-1"},
     )

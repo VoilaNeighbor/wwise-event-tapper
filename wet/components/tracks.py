@@ -1,77 +1,33 @@
 import datetime as dt
-from collections.abc import Callable
 from logging import getLogger
 from pathlib import Path
 
 import polars as pl
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QFileDialog,
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QMessageBox,
-    QPushButton,
-    QSpinBox,
     QVBoxLayout,
-    QWidget,
 )
+
+from wet.components.util import make_button
 
 _logger = getLogger("wwise-event-tapper")
 
 
-def _make_meta_control(
-    export_callback: Callable[[], None],
-    height: int = 23,
-    label_align: Qt.AlignmentFlag = (
-        Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-    ),
-) -> QWidget:
-    ret = QWidget()
-
-    export_button = QPushButton("Export")
-    bpm_label = QLabel("BPM")
-    bpm_spin = QSpinBox()
-    bpm_spin.setRange(0, 999)
-    offset_label = QLabel("Offset")
-    offset_spin = QSpinBox()
-
-    export_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-    export_button.setFixedHeight(height)
-    export_button.clicked.connect(export_callback)
-    bpm_label.setFixedWidth(40)
-    bpm_label.setAlignment(label_align)
-    bpm_spin.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-    bpm_spin.setFixedHeight(height)
-    offset_spin.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-    offset_label.setFixedWidth(40)
-    offset_label.setAlignment(label_align)
-    offset_spin.setFixedHeight(height)
-
-    layout = QHBoxLayout(ret)
-    layout.setContentsMargins(0, 0, 0, 0)
-    layout.setSpacing(10)
-    layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-    layout.addWidget(export_button)
-    layout.addWidget(bpm_label)
-    layout.addWidget(bpm_spin)
-    layout.addWidget(offset_label)
-    layout.addWidget(offset_spin)
-
-    return ret
-
-
 class TapTracksContainer(QGroupBox):
+    tracks_exported = Signal(str)
+
     def __init__(self) -> None:
         super().__init__()
 
         self.setTitle("⭐ Tap Tracks")
 
-        self._layout = QVBoxLayout(self)
-        self._layout.setSpacing(10)
-
-        meta_control = _make_meta_control(self.export_to_csv)
-        self._layout.addWidget(meta_control)
+        layout_l = QVBoxLayout()
+        layout_l.setSpacing(10)
 
         # Qt.Key -> milliseconds
         self._track_taps: dict[Qt.Key, list[tuple[int, int]]] = {
@@ -95,8 +51,22 @@ class TapTracksContainer(QGroupBox):
             track_layout.addStretch()
             self._track_count_labels[key] = count_label
 
-        self._layout.addLayout(track_layout)
-        self._layout.addStretch()
+        layout_l.addLayout(track_layout)
+        layout_l.addStretch()
+
+        # Put the export button to the right
+        export_button = make_button("Export")
+        export_button.clicked.connect(self.export_to_csv)
+        layout_r = QHBoxLayout()
+        layout_r.addStretch()
+        layout_r.addWidget(export_button)
+        layout_tr = QVBoxLayout()
+        layout_tr.addLayout(layout_r)
+        layout_tr.addStretch()
+
+        self._layout = QHBoxLayout(self)
+        self._layout.addLayout(layout_l)
+        self._layout.addLayout(layout_tr)
 
         # Public for use in the calibration pass.
         self.tap_csv_path: Path | None = None
@@ -117,7 +87,7 @@ class TapTracksContainer(QGroupBox):
         file_path, _ = QFileDialog.getSaveFileName(
             self,
             "Export Tap Tracks",
-            f"tracks.{now:%Y%m%d_%H%M%S}.csv",
+            f"raw_taps.{now:%Y%m%d_%H%M%S}.csv",
             "CSV Files (*.csv);;All Files (*)",
         )
 
@@ -138,3 +108,4 @@ class TapTracksContainer(QGroupBox):
         frame = pl.DataFrame(data, schema=["track", "start", "end"])
         frame.write_csv(file_path)
         self.tap_csv_path = Path(file_path).resolve(strict=True)
+        self.tracks_exported.emit(file_path)
