@@ -1,14 +1,9 @@
 from logging import getLogger
+from typing import override
 
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QKeyEvent, QMouseEvent
-from PySide6.QtWidgets import (
-    QFileDialog,
-    QMainWindow,
-    QMessageBox,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtGui import QMouseEvent
+from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget
 
 from wet.components.music_player import MusicPlayer
 from wet.components.tap_trackers import TapTracksContainer
@@ -30,19 +25,29 @@ class AppMainWindow(QMainWindow):
 
         title_bar = TitleBar()
         title_bar.exit_button.clicked.connect(self.close)
-        title_bar.select_file_button.clicked.connect(self._on_select_file)
+        title_bar.select_file_button.clicked.connect(self._player.load_music_file)
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(title_bar)
-        layout.addWidget(self._player)
-        layout.addWidget(self._tap_tracks)
+
+        layout1 = QVBoxLayout()
+        layout1.setContentsMargins(10, 10, 10, 10)
+        layout1.addWidget(self._player)
+        layout1.addWidget(self._tap_tracks)
+
+        layout.addLayout(layout1)
         layout.addStretch()
 
         self._drag_start = QPoint()
 
+    def onGlobalKeyPress(self, key: Qt.Key) -> bool | None:
+        if self._player.playing:
+            return self._tap_tracks.tap(key, self._player.position)
+
+    @override
     def mousePressEvent(self, event: QMouseEvent, /) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             global_point = event.globalPosition().toPoint()
@@ -51,6 +56,7 @@ class AppMainWindow(QMainWindow):
         else:
             super().mousePressEvent(event)
 
+    @override
     def mouseMoveEvent(self, event: QMouseEvent, /) -> None:
         # Triggered when _only_ the left button is pressed.
         if event.buttons() == Qt.MouseButton.LeftButton:
@@ -58,21 +64,3 @@ class AppMainWindow(QMainWindow):
             event.accept()
         else:
             super().mouseMoveEvent(event)
-
-    def keyPressEvent(self, event: QKeyEvent, /) -> None:
-        if event.key() == Qt.Key.Key_J:
-            ...
-        else:
-            super().keyPressEvent(event)
-
-    def _on_select_file(self) -> None:
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            caption="Select Audio File",
-            dir="",
-            filter="Audio Files (*.mp3 *.wav *.ogg);;All Files (*)",
-        )
-        if file_path:
-            self._player.load_music_file(file_path)
-        else:
-            QMessageBox.warning(self, "Error", f"Failed to load music at {file_path}")

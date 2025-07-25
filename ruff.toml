@@ -11,8 +11,11 @@ ignore = [
     "PLC0415", # Allow local/dynamic imports.
     "PGH003",  # Allow type ignore.
     "PLR2004", # Allow magic numbers. I know what I'm doing for obvious cases.
+    "PLR6201", # Allow tuples for membership tests. It can be faster for simple cases.
     "PTH",     # Allow using `os.path`; it's often simpler.
+    "RET503",  # Allow implicit return None.
     "RET504",  # Allow assigning to a variable before returning.
+    "RUF021",  # Allow non-parenthesized and/or expressions.
     "INP001",  # Allow namespace packages.
     "S101",    # Allow use of assert, in tests and for doc purposes.
     "S404",    # Allow use of the subprocess module.

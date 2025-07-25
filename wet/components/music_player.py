@@ -1,15 +1,20 @@
 import os
+from logging import getLogger
 
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtWidgets import (
+    QFileDialog,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QPushButton,
     QSlider,
     QVBoxLayout,
-    QWidget,
 )
+
+_logger = getLogger("wwise-event-tapper")
 
 
 def _format_time(ms: int) -> str:
@@ -17,9 +22,10 @@ def _format_time(ms: int) -> str:
     return f"{s // 60:02d}:{s % 60:02d}"
 
 
-class MusicPlayer(QWidget):
+class MusicPlayer(QGroupBox):
     def __init__(self) -> None:
         super().__init__()
+        self.setTitle("🎵 Music Status")
 
         self._player = QMediaPlayer()
         self._label = QLabel("No music loaded.")
@@ -53,6 +59,14 @@ class MusicPlayer(QWidget):
         if __debug__:
             self.load_music_file("assets/Alexander Klaws - Cry on My Shoulder.ogg")
 
+    @property
+    def position(self) -> int:
+        return self._player.position()
+
+    @property
+    def playing(self) -> bool:
+        return self._player.isPlaying()
+
     def _on_music_position_change(self, value: int) -> None:
         self._progress_slider.setValue(value)
         self._progress_label.setText(
@@ -68,7 +82,11 @@ class MusicPlayer(QWidget):
             self._play_button.setText("Pause")
 
     def _on_media_status_changed(self, status: QMediaPlayer.MediaStatus) -> None:
-        if status == QMediaPlayer.MediaStatus.LoadedMedia:
+        if status == QMediaPlayer.MediaStatus.InvalidMedia:
+            message = f"Failed to load music at {self._player.source().toString()}"
+            _logger.error(message)
+            QMessageBox.warning(self, "Media Error", message)
+        elif status == QMediaPlayer.MediaStatus.LoadedMedia:
             # Update the length label.
             self._on_music_position_change(0)
             self._progress_slider.setMaximum(self._player.duration())
@@ -76,7 +94,17 @@ class MusicPlayer(QWidget):
         elif status == QMediaPlayer.MediaStatus.EndOfMedia:
             self._play_button.setText("Play")
 
-    def load_music_file(self, file_path: str) -> None:
+    def load_music_file(self, file_path: str = "") -> None:
+        if not file_path:
+            file_path, _ = QFileDialog.getOpenFileName(
+                self,
+                caption="Select Audio File",
+                dir="",
+                filter="Audio Files (*.mp3 *.wav *.ogg);;All Files (*)",
+            )
+        if not file_path:
+            _logger.info("No music selected")
+            return
         self._label.setText(f"Loaded: <strong>{os.path.basename(file_path)}</strong>")
         self._player.setSource(QUrl.fromLocalFile(file_path))
         self._play_button.setText("Play")
