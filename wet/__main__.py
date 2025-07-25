@@ -1,9 +1,7 @@
 import logging
 import sys
-from typing import cast, override
 
-from PySide6.QtCore import QEvent, QObject, Qt
-from PySide6.QtGui import QFont, QFontDatabase, QKeyEvent
+from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import QApplication
 
 from wet.components.main_window import AppMainWindow
@@ -12,22 +10,12 @@ from wet.util import REPO_ROOT
 _logger = logging.getLogger("wwise-event-tapper")
 
 
-class TapEventFilter(QObject):
-    def __init__(self, window: AppMainWindow) -> None:
-        super().__init__()
-        self._window = window
-
-    @override
-    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
-        return (
-            event.type() == event.Type.KeyPress
-            and self._window.onGlobalKeyPress(Qt.Key(cast("QKeyEvent", event).key()))
-            or super().eventFilter(obj, event)
-        )
-
-
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+    if __debug__:
+        logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+    else:
+        logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
+
     app = QApplication(sys.argv)
 
     # Apply global styles.
@@ -54,7 +42,6 @@ def main() -> None:
 
     # Init window and run app until end.
     window = AppMainWindow()
-    app.installEventFilter(TapEventFilter(window))
     window.show()
     sys.exit(app.exec())
 

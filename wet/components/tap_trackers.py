@@ -1,3 +1,5 @@
+from logging import getLogger
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QGroupBox,
@@ -8,6 +10,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+_logger = getLogger("wwise-event-tapper")
+
 
 def _make_bpm_control() -> QWidget:
     ret = QWidget()
@@ -15,9 +19,11 @@ def _make_bpm_control() -> QWidget:
     bpm_spin = QSpinBox()
     bpm_spin.setFixedHeight(25)
     bpm_spin.setRange(0, 999)
+    bpm_spin.setFocusPolicy(Qt.FocusPolicy.NoFocus)
     offset_label = QLabel("Offset")
     offset_spin = QSpinBox()
     offset_spin.setFixedHeight(25)
+    offset_spin.setFocusPolicy(Qt.FocusPolicy.NoFocus)
     layout = QHBoxLayout(ret)
     layout.setSpacing(10)
     layout.addWidget(bpm_label)
@@ -57,9 +63,10 @@ class TapTracksContainer(QGroupBox):
             self._layout.addStretch()
             self._track_count_labels[key] = count_label
 
-    def tap(self, key: Qt.Key, value: int) -> bool | None:
+    def tap(self, key: Qt.Key, value: int) -> bool:
         """Add a tap if there is a track for the key."""
-        if track := self._track_taps.get(key):
+        if (track := self._track_taps.get(key)) is not None:
             track.append(value)
             self._track_count_labels[key].setText(f"[count: {len(track)}]")
             return True
+        return False

@@ -1,4 +1,8 @@
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton
+from typing import override
+
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QMouseEvent
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QMainWindow, QPushButton
 
 _title_bar_style = """
     QFrame {
@@ -38,8 +42,9 @@ _exit_button_style = """
 
 
 class TitleBar(QFrame):
-    def __init__(self) -> None:
+    def __init__(self, window: QMainWindow) -> None:
         super().__init__()
+        self._window = window
 
         self.setFixedHeight(30)
         self.setStyleSheet(_title_bar_style)
@@ -47,6 +52,10 @@ class TitleBar(QFrame):
         self.select_file_button = QPushButton("Select File")
         self.export_button = QPushButton("Export")
         self.exit_button = QPushButton("×")  # noqa: RUF001
+
+        self.select_file_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.export_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.exit_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.select_file_button.setStyleSheet(_menu_button_style)
         self.export_button.setStyleSheet(_menu_button_style)
@@ -63,3 +72,21 @@ class TitleBar(QFrame):
         layout.addWidget(self.export_button)
         layout.addStretch()
         layout.addWidget(self.exit_button)
+
+    @override
+    def mousePressEvent(self, event: QMouseEvent, /) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            global_point = event.globalPosition().toPoint()
+            self._drag_start = global_point - self._window.frameGeometry().topLeft()
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
+    @override
+    def mouseMoveEvent(self, event: QMouseEvent, /) -> None:
+        # Triggered when _only_ the left button is pressed.
+        if event.buttons() == Qt.MouseButton.LeftButton:
+            self._window.move(event.globalPosition().toPoint() - self._drag_start)
+            event.accept()
+            return
+        super().mouseMoveEvent(event)

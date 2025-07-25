@@ -37,12 +37,13 @@ class MusicPlayer(QGroupBox):
         self._player.setAudioOutput(self._audio)
         self._play_button.setEnabled(False)
         self._play_button.setFixedSize(70, 30)
+        self._play_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._progress_slider.setEnabled(False)
         self._progress_label.setStyleSheet("color: gray;")
 
         self._player.positionChanged.connect(self._on_music_position_change)
         self._player.mediaStatusChanged.connect(self._on_media_status_changed)
-        self._play_button.clicked.connect(self._on_play_button)
+        self._play_button.clicked.connect(self.toggle_play)
         self._progress_slider.sliderMoved.connect(self._player.setPosition)
 
         progress_layout = QHBoxLayout()
@@ -67,19 +68,19 @@ class MusicPlayer(QGroupBox):
     def playing(self) -> bool:
         return self._player.isPlaying()
 
-    def _on_music_position_change(self, value: int) -> None:
-        self._progress_slider.setValue(value)
-        self._progress_label.setText(
-            f"{_format_time(value)} / {_format_time(self._player.duration())}"
-        )
-
-    def _on_play_button(self) -> None:
+    def toggle_play(self) -> None:
         if self._player.isPlaying():
             self._player.pause()
             self._play_button.setText("Play")
         else:
             self._player.play()
             self._play_button.setText("Pause")
+
+    def _on_music_position_change(self, value: int) -> None:
+        self._progress_slider.setValue(value)
+        self._progress_label.setText(
+            f"{_format_time(value)} / {_format_time(self._player.duration())}"
+        )
 
     def _on_media_status_changed(self, status: QMediaPlayer.MediaStatus) -> None:
         if status == QMediaPlayer.MediaStatus.InvalidMedia:

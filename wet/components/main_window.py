@@ -2,7 +2,7 @@ from logging import getLogger
 from typing import override
 
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QMouseEvent
+from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import QMainWindow, QVBoxLayout, QWidget
 
 from wet.components.music_player import MusicPlayer
@@ -23,7 +23,7 @@ class AppMainWindow(QMainWindow):
         self._player = MusicPlayer()
         self._tap_tracks = TapTracksContainer()
 
-        title_bar = TitleBar()
+        title_bar = TitleBar(self)
         title_bar.exit_button.clicked.connect(self.close)
         title_bar.select_file_button.clicked.connect(self._player.load_music_file)
 
@@ -43,24 +43,13 @@ class AppMainWindow(QMainWindow):
 
         self._drag_start = QPoint()
 
-    def onGlobalKeyPress(self, key: Qt.Key) -> bool | None:
-        if self._player.playing:
-            return self._tap_tracks.tap(key, self._player.position)
-
     @override
-    def mousePressEvent(self, event: QMouseEvent, /) -> None:
-        if event.button() == Qt.MouseButton.LeftButton:
-            global_point = event.globalPosition().toPoint()
-            self._drag_start = global_point - self.frameGeometry().topLeft()
+    def keyPressEvent(self, event: QKeyEvent, /) -> None:
+        if event.key() == Qt.Key.Key_Space:
+            self._player.toggle_play()
+            event.accept()
+        elif self._player.playing:
+            self._tap_tracks.tap(Qt.Key(event.key()), self._player.position)
             event.accept()
         else:
-            super().mousePressEvent(event)
-
-    @override
-    def mouseMoveEvent(self, event: QMouseEvent, /) -> None:
-        # Triggered when _only_ the left button is pressed.
-        if event.buttons() == Qt.MouseButton.LeftButton:
-            self.move(event.globalPosition().toPoint() - self._drag_start)
-            event.accept()
-        else:
-            super().mouseMoveEvent(event)
+            super().keyPressEvent(event)
