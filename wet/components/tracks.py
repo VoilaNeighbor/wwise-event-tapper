@@ -1,5 +1,5 @@
-from contextlib import suppress
 import datetime as dt
+from contextlib import suppress
 from logging import getLogger
 from pathlib import Path
 

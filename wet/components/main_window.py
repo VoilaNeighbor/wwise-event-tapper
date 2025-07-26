@@ -45,10 +45,17 @@ class AppMainWindow(QMainWindow):
         layout.addStretch()
 
         self._drag_start = QPoint()
+        # Remember pressed keys because Qt trigger press events multiple times
+        # when you press multiple keys at once.
+        self._pressing_keys: set[Qt.Key] = set()
 
     @override
     def keyPressEvent(self, event: QKeyEvent, /) -> None:
         key = Qt.Key(event.key())
+        if key in self._pressing_keys:
+            super().keyPressEvent(event)
+            return
+        self._pressing_keys.add(key)
         if key == Qt.Key.Key_Space:
             self._player.toggle_play()
             event.accept()
@@ -66,6 +73,7 @@ class AppMainWindow(QMainWindow):
             event.accept()
         else:
             super().keyReleaseEvent(event)
+        self._pressing_keys.discard(Qt.Key(event.key()))
 
     @override
     def mousePressEvent(self, event: QMouseEvent) -> None:
