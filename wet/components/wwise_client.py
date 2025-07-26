@@ -1,5 +1,5 @@
 from logging import getLogger
-from typing import Any
+from typing import Any, cast
 
 from waapi import WaapiClient  # type: ignore[import]
 
@@ -51,15 +51,14 @@ class WwiseController(WaapiClient):
         }
         opts = {"return": ["id", "name", "CueType"]}
 
-        result = self.call("ak.wwise.core.object.get", args, options=opts)  # type: ignore
-        if not result:
-            return 0
-
-        cues = result.get("return", [])  # type: ignore
+        result = cast("Any", self.call("ak.wwise.core.object.get", args, options=opts))  # type: ignore
+        cues = cast("Any", result.get("return", []))  # type: ignore
         if not cues:
             return 0
 
-        for cue in cues:  # type: ignore
+        _logger.info("Cues: %s", cues)
+
+        for cue in cues:
             cue_type = cue.get("CueType", 0)  # type: ignore[assignment]
             cue_id = cue.get("id")  # type: ignore[assignment]
             # Only delete custom cues
