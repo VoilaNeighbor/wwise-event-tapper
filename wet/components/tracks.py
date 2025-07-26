@@ -1,3 +1,4 @@
+from contextlib import suppress
 import datetime as dt
 from logging import getLogger
 from pathlib import Path
@@ -16,6 +17,14 @@ from PySide6.QtWidgets import (
 from wet.components.util import make_button
 
 _logger = getLogger("wwise-event-tapper")
+
+SCHEMA = pl.Schema(
+    {
+        "track": str,
+        "start": int,  # ms
+        "end": int,  # ms
+    }
+)
 
 
 class TapTracksContainer(QGroupBox):
@@ -83,11 +92,14 @@ class TapTracksContainer(QGroupBox):
         return False
 
     def export_to_csv(self) -> None:
+        with suppress(OSError):
+            Path("export").mkdir(parents=True, exist_ok=True)
+
         now = dt.datetime.now().astimezone()
         file_path, _ = QFileDialog.getSaveFileName(
             self,
             "Export Tap Tracks",
-            f"raw_taps.{now:%Y%m%d_%H%M%S}.csv",
+            f"export/raw_taps.{now:%Y%m%d_%H%M%S}.csv",
             "CSV Files (*.csv);;All Files (*)",
         )
 
@@ -105,7 +117,7 @@ class TapTracksContainer(QGroupBox):
             for start_time, end_time in track
         ]
 
-        frame = pl.DataFrame(data, schema=["track", "start", "end"])
+        frame = pl.DataFrame(data, SCHEMA, orient="row")
         frame.write_csv(file_path)
         self.tap_csv_path = Path(file_path).resolve(strict=True)
         self.tracks_exported.emit(file_path)
