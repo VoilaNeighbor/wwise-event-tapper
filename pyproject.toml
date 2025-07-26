@@ -13,6 +13,7 @@ dependencies = [
     "pydub>=0.25.1",
     "pygame>=2.6.1",
     "qt-material>=2.17",
+    "waapi-client>=0.8",
 ]
 
 [dependency-groups]
