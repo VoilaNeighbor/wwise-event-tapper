@@ -1,0 +1,8 @@
+---
+description: Rules for refactoring python code
+alwaysApply: false
+---
+
+- Use modern Python type hints: `list[str]` not `List[str]`, `dict[str, int]` not `Dict[str, int]`
+- Simplify complex code: extract functions, split large classes, separate concerns into modules
+- Clean up naming and docs: remove obvious comments, improve function names, keep docs concise

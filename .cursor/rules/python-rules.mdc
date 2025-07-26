@@ -3,5 +3,6 @@ description: How to run any python script in this project.
 alwaysApply: false
 ---
 
-1. Use `uv` to run commands, e.g. `uv run $my_pyscript`.
-2. Use `uv ci.py` (you can view the file if you need to) for CI such as lint & type check.
+- We use Python 3.13. Don't use obsolete things. Use modern type hints.
+- Use `uv` to run commands, e.g. `uv run $my_pyscript`.
+- Use `uv ci.py` (you can view the file if you need to) for CI such as lint & type check.
