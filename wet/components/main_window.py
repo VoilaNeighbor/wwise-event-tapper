@@ -5,6 +5,7 @@ from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QKeyEvent, QMouseEvent
 from PySide6.QtWidgets import QApplication, QMainWindow, QSpinBox, QVBoxLayout, QWidget
 
+from wet.components import wwise_client
 from wet.components.calibrator import TapCalibrator
 from wet.components.music_player import MusicPlayer
 from wet.components.title_bar import TitleBar
@@ -45,35 +46,35 @@ class AppMainWindow(QMainWindow):
         layout.addStretch()
 
         self._drag_start = QPoint()
-        # Remember pressed keys because Qt trigger press events multiple times
-        # when you press multiple keys at once.
-        self._pressing_keys: set[Qt.Key] = set()
+
+    @override
+    def close(self) -> bool:
+        wwise_client.shutdown_instances()
+        return super().close()
 
     @override
     def keyPressEvent(self, event: QKeyEvent, /) -> None:
         key = Qt.Key(event.key())
-        if key in self._pressing_keys:
-            super().keyPressEvent(event)
-            return
-        self._pressing_keys.add(key)
-        if key == Qt.Key.Key_Space:
-            self._player.toggle_play()
-            event.accept()
-        elif self._player.playing:
-            self._tap_tracks.tap(key, self._player.position, is_lift=False)
-            event.accept()
-        else:
-            super().keyPressEvent(event)
+
+        if not event.isAutoRepeat():
+            if key == Qt.Key.Key_Space:
+                self._player.toggle_play()
+                return event.accept()
+
+            if self._player.playing:  # noqa: SIM102
+                if self._tap_tracks.tap(key, self._player.position, is_lift=False):
+                    return event.accept()
+
+        super().keyPressEvent(event)
 
     @override
     def keyReleaseEvent(self, event: QKeyEvent, /) -> None:
-        if self._player.playing:
+        if not event.isAutoRepeat() and self._player.playing:
             key = Qt.Key(event.key())
             self._tap_tracks.tap(key, self._player.position, is_lift=True)
-            event.accept()
-        else:
-            super().keyReleaseEvent(event)
-        self._pressing_keys.discard(Qt.Key(event.key()))
+            return event.accept()
+
+        super().keyReleaseEvent(event)
 
     @override
     def mousePressEvent(self, event: QMouseEvent) -> None:
